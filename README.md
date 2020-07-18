@@ -19,3 +19,6 @@ usafactsdata()
 us_empirical_by_level("csse")
 us_empirical_by_level("usafacts")
 ```
+# notes:
+* Only csse or usafacts, as of July 18th, 2020
+* When creating list of us/state/county level data using "usafacts", territorial data will be pulled by default from csse
