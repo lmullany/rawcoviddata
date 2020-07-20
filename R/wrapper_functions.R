@@ -16,7 +16,6 @@ us_empirical_by_level <- function(empirical_source,
                                    updategit=F,
                                    supplement_territories=T) {
 
-  #states <- data.table::setnames(statenames(), old=c("state_abbreviation", "state_name"), new=c("USPS","Province_State"))
 
   emp_type = empirical_source
 
@@ -82,8 +81,9 @@ us_empirical_by_level <- function(empirical_source,
 #' Prepare a utility dataframe for state names and abbreviations
 #'
 #' This function prepares a utility dataframe for state names and abbreviations
+#' @noRd
 #' @examples
-#' statenames()
+#' #' statenames()
 statenames <- function() {
   states_names <- c("Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut",
                     "Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois",
