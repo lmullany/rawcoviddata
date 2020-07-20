@@ -1,7 +1,7 @@
 #' Prepare us level empirical data into three levels
 #'
 #' This function prepares the empirical data. Depending on source it will call functions to prepare the csse or usafacts data
-#' @param empirical_source source of empirical data.. must be 'csse','usafacts'
+#' @param empirical_source source of empirical data.. must be 'csse','usafacts' (defaults to csse)
 #' @param csse_repo_path defaults to NULL, otherwise a path to local clone of JHU CSSE repo
 #' @param filterdates defaults to all NULL, otherwise a pair of dates (e.g. c("2020-03-01", "2020-06-01")
 #' @param updategit defaults to FALSE; should the local csse git repo be queried for possible update?
@@ -10,14 +10,14 @@
 #' prepare_empirical_data("usafacts", "jhudata/", c("2020-03-01", "2020-06-01"))
 #' prepare_empirical_data("csse")
 
-us_empirical_by_level <- function(empirical_source,
+us_empirical_by_level <- function(empirical_source=c("csse","usafacts"),
                                    csse_repo_path=NULL,
                                    filterdates=NULL,
                                    updategit=F,
                                    supplement_territories=T) {
 
 
-  emp_type = empirical_source
+  emp_type = match.arg(empirical_source)
 
   if(emp_type=="usafacts") {
     empirical_base <- usafactsdata()[,list(Province_State, Admin2, FIPS, Date, cumConfirmed, cumDeaths, Confirmed, Deaths)]

@@ -5,7 +5,7 @@
 \title{Prepare us level empirical data into three levels}
 \usage{
 us_empirical_by_level(
-  empirical_source,
+  empirical_source = c("csse", "usafacts"),
   csse_repo_path = NULL,
   filterdates = NULL,
   updategit = F,
@@ -13,7 +13,7 @@ us_empirical_by_level(
 )
 }
 \arguments{
-\item{empirical_source}{source of empirical data.. must be 'csse','usafacts'}
+\item{empirical_source}{source of empirical data.. must be 'csse','usafacts' (defaults to csse)}
 
 \item{csse_repo_path}{defaults to NULL, otherwise a path to local clone of JHU CSSE repo}
 
