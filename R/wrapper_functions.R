@@ -16,58 +16,62 @@ us_empirical_by_level <- function(empirical_source,
                                    updategit=F,
                                    supplement_territories=T) {
 
-  states <- data.table::setnames(statenames(), old=c("state_abbreviation", "state_name"), new=c("USPS","Province_State"))
+  #states <- data.table::setnames(statenames(), old=c("state_abbreviation", "state_name"), new=c("USPS","Province_State"))
 
   emp_type = empirical_source
 
   if(emp_type=="usafacts") {
     empirical_base <- usafactsdata()[,list(Province_State, Admin2, FIPS, Date, cumConfirmed, cumDeaths, Confirmed, Deaths)]
     data.table::setnames(empirical_base,old="Province_State", new="USPS")
-    empirical_base <- data.table::merge.data.table(empirical_base, states[,list(USPS,Province_State)], by="USPS")
+    empirical_base <- data.table::merge.data.table(empirical_base, statepops[,list(USPS,Province_State)], by="USPS")
 
-    #As of 2020-05-05, usafacts does not have data for the terriorties, so
+    #As of 2020-05-05, usafacts does not have data for the territories
     #we are going to supplement by pulling the csse data, and adding in the
     #rows from the territories
 
     if(supplement_territories) {
-      csse_territory_data <- cssedata(csse_repo_path,updategit = updategit)[, list(Province_State, Admin2, FIPS,Date,cumConfirmed,cumDeaths, Confirmed, Deaths)]
-      csse_territory_data <- data.table::merge.data.table(csse_territory_data, states[USPS %in% c("AS","GU","MP","PR","VI"),])
+      csse_territory_data <- cssedata(csse_repo_path,updategit = updategit)
+      csse_territory_data <- data.table::merge.data.table(csse_territory_data,
+                                                          statepops[USPS %in% c("AS","GU","MP","PR","VI"),list(USPS,Province_State)])
 
       empirical_base <- data.table::setorder(rbind(empirical_base,csse_territory_data),USPS, Admin2, Date)
     }
   }
 
   if(emp_type=="csse") {
-    empirical_base <- data.table::merge.data.table(cssedata(csse_repo_path, updategit=updategit)[, list(Province_State, Admin2, FIPS,Date,cumConfirmed,cumDeaths, Confirmed, Deaths)],
-                                                   states,
+    empirical_base <- data.table::merge.data.table(cssedata(csse_repo_path, updategit=updategit),
+                                                   statepops[,.(Province_State, USPS)],
                                                    by="Province_State")
   }
 
   if(emp_type %in% c("usafacts","csse")) {
     #lets drop any rows without FIPS, because we are going to plot across these
-    empirical_base <- empirical_base[!is.na(FIPS),list(USPS,Province_State, Admin2, FIPS, Date, cumConfirmed, cumDeaths, Confirmed, Deaths)]
-    #data.table::setnames(empirical_base, old=c("Confirmed", "Deaths"), new=c("cumConfirmed","cumDeaths"))
+    empirical_base <- empirical_base[!is.na(FIPS)]
+
+    #add county population
+    empirical_base[countypops,Population:=i.Population, on="FIPS"]
 
     county <- data.table::copy(empirical_base)
-    # county[,`:=`(Confirmed=c(cumConfirmed[1],diff(cumConfirmed)),
-    #              Deaths=c(cumDeaths[1], diff(cumDeaths))), by="FIPS"]
     if(!is.null(filterdates)) {
       county <- county[Date>=filterdates[1] & Date<=filterdates[2],]
     }
+    county$Province_State=NULL
+    setcolorder(county,c("USPS","FIPS", "Admin2", "Population","Date"))
+
     state <- data.table::copy(empirical_base)
     state <- state[,lapply(.SD, sum), by=c("USPS","Date"), .SDcols=c("cumConfirmed","cumDeaths","Confirmed", "Deaths")]
-    # state[,`:=`(Confirmed=c(cumConfirmed[1], diff(cumConfirmed)),
-    #             Deaths=c(cumDeaths[1], diff(cumDeaths))), by="USPS"]
+    state[statepops, Population:=i.Population, on="USPS"]
+    setcolorder(state,c("USPS","Population","Date"))
     if(!is.null(filterdates)) {
       state <- state[Date>=filterdates[1] & Date<=filterdates[2],]
     }
     #for last, one, US, no need to make copy
     empirical_base <- empirical_base[,lapply(.SD, sum), by="Date", .SDcols=c("cumConfirmed","cumDeaths", "Confirmed","Deaths")]
-    # empirical_base[,`:=`(Confirmed=c(cumConfirmed[1], diff(cumConfirmed)),
-    #                      Deaths = c(cumDeaths[1], diff(cumDeaths)))]
+    empirical_base[,Population:=statepops[,sum(Population,na.rm=T)]]
     if(!is.null(filterdates)) {
       empirical_base <- empirical_base[Date>=filterdates[1] & Date<=filterdates[2],]
     }
+    setcolorder(empirical_base, c("Population","Date"))
   }
 
 
@@ -78,7 +82,6 @@ us_empirical_by_level <- function(empirical_source,
 #' Prepare a utility dataframe for state names and abbreviations
 #'
 #' This function prepares a utility dataframe for state names and abbreviations
-#' @export
 #' @examples
 #' statenames()
 statenames <- function() {

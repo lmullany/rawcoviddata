@@ -11,9 +11,11 @@ cssedata <- function(gitpath=NULL, updategit=F) {
 
   read_jhu_wide_us_dt <- function(fname, outcomename) {
     dt <- data.table::fread(fname,showProgress = FALSE)
-    vars_to_keep <- c(5,6,7, 12:ncol(dt))
-    dt <- dt[,..vars_to_keep]
-    dt <- data.table::melt(dt, id.vars=c("FIPS", "Admin2", "Province_State"), variable.name="Date", value.name=outcomename)
+    idvars = c("FIPS","Admin2","Province_State")
+      dt <- data.table::melt(dt,
+                             id.vars=idvars,
+                             measure.vars = grep("\\d{1,2}/\\d{1,2}/\\d{1,2}",names(dt)),
+                             variable.name="Date", value.name=outcomename)
     return(dt)
   }
 
@@ -44,11 +46,11 @@ cssedata <- function(gitpath=NULL, updategit=F) {
 
   csse[,`:=`(Confirmed=c(cumConfirmed[1],diff(cumConfirmed)),
              Deaths = c(cumDeaths[1], diff(cumDeaths))), by=.(FIPS, Admin2, Province_State)]
-
+  setcolorder(csse,c("FIPS","Admin2","Province_State","Date"))
 
   #return the resulting combined dataframe
   #return(dplyr::as_tibble(csse))
-  return(csse[])
+  return(csse[,])
 
 }
 
