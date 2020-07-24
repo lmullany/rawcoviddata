@@ -161,6 +161,17 @@ cssedataglobal <- function(gitpath=NULL, updategit=F) {
 
 }
 
+#' Pull the STATE level dx testing data from CDC
+#'
+#' This function pulls state level testing data from private and public labs, aggregated at state level
+#' @export
+#' @examples
+#' dxtestingdata()
+dxtestingdata <- function() {
+  url <- "https://healthdata.gov/sites/default/files/covid-19_diagnostic_lab_testing_20200723_2310.csv"
+  dxtest <- data.table::fread(url)
+  return(dxtest[])
+}
 
 
 

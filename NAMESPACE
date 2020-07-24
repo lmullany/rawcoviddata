@@ -3,6 +3,7 @@
 export("%>%")
 export(cssedata)
 export(cssedataglobal)
+export(dxtestingdata)
 export(us_empirical_by_level)
 export(usafactsdata)
 import(data.table)
