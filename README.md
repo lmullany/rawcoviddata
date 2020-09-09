@@ -22,3 +22,12 @@ us_empirical_by_level("usafacts")
 # notes:
 * Only csse or usafacts, as of July 18th, 2020
 * When creating list of us/state/county level data using "usafacts", territorial data will be pulled by default from csse
+
+# Example plot generation
+```r
+library(ggplot2)
+library(rawcoviddata)
+us <- cssedataglobal()[`Country/Region`=="US"]
+ggplot(us, aes(Date,Confirmed)) + geom_point() + geom_smooth(method="gam")
+```
+![us_cases](example_plot.png)
