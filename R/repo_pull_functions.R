@@ -168,8 +168,10 @@ cssedataglobal <- function(gitpath=NULL, updategit=F) {
 #' @examples
 #' dxtestingdata()
 dxtestingdata <- function() {
-  url <- "https://healthdata.gov/sites/default/files/covid-19_diagnostic_lab_testing_20200723_2310.csv"
-  dxtest <- data.table::fread(url)
+
+  dxtest <- data.table::fread(
+      jsonlite::fromJSON("https://healthdata.gov/api/3/action/package_show?id=c13c00e3-f3d0-4d49-8c43-bf600a6c0a0d")$result$resources[[1]]$url
+  )
   return(dxtest[])
 }
 

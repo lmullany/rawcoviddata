@@ -23,11 +23,12 @@ us_empirical_by_level("usafacts")
 * Only csse or usafacts, as of July 18th, 2020
 * When creating list of us/state/county level data using "usafacts", territorial data will be pulled by default from csse
 
-# example plot generation
+# example plot generation (knots placed every 10 days)
 ```r
 library(ggplot2)
 library(rawcoviddata)
 us <- cssedataglobal()[`Country/Region`=="US"]
-ggplot(us, aes(Date,Confirmed)) + geom_point() + geom_smooth(method="gam")
+knots <- round(length(us$Confirmed)/10,0)
+ggplot(us, aes(Date,Confirmed)) + geom_point() + geom_smooth(method="gam", formula=y~s(x,bs="cs",k=knots))
 ```
 ![us_cases](example_plot.png)
