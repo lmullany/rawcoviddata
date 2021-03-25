@@ -169,8 +169,10 @@ cssedataglobal <- function(gitpath=NULL, updategit=F) {
 #' dxtestingdata()
 dxtestingdata <- function() {
 
+  # TODO changing this to use the legacy sub-domain to keep the code working for now, but that URL will be retired in 2? weeks
+  # need to migrate to use the new API released on the main site over the weekend.
   dxtest <- data.table::fread(
-      jsonlite::fromJSON("https://healthdata.gov/api/3/action/package_show?id=c13c00e3-f3d0-4d49-8c43-bf600a6c0a0d")$result$resources[[1]]$url
+      jsonlite::fromJSON("https://legacy.healthdata.gov/api/3/action/package_show?id=c13c00e3-f3d0-4d49-8c43-bf600a6c0a0d")$result$resources[[1]]$url
   )
   return(dxtest[])
 }
