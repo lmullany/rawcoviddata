@@ -44,7 +44,7 @@ us_empirical_by_level <- function(empirical_source=c("csse","usafacts"),
   }
 
   if(emp_type %in% c("usafacts","csse")) {
-    #lets drop any rows without FIPS, because we are going to plot across these
+    #lets drop any rows without FIPS,
     empirical_base <- empirical_base[!is.na(FIPS)]
 
     #add county population

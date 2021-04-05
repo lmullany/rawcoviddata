@@ -7,7 +7,7 @@
 #' @export
 #' @examples
 #' cssedata("jhudata/")
-cssedata <- function(gitpath=NULL, updategit=F) {
+cssedata <- function(gitpath="csse", updategit=F) {
 
   read_jhu_wide_us_dt <- function(fname, outcomename) {
     dt <- data.table::fread(fname,showProgress = FALSE)
@@ -49,7 +49,6 @@ cssedata <- function(gitpath=NULL, updategit=F) {
   setcolorder(csse,c("FIPS","Admin2","Province_State","Date"))
 
   #return the resulting combined dataframe
-  #return(dplyr::as_tibble(csse))
   return(csse[,])
 
 }
@@ -67,7 +66,7 @@ usafactsdata <- function() {
   read_usafacts_wide <- function(url, outcomename) {
     dt <- data.table::fread(url, showProgress = FALSE)
     dt <- data.table::melt(dt, id.vars = c(1,2,3,4),
-                           measure.vars = grep("\\d{1,2}/\\d{1,2}/\\d{1,2}",names(dt)),
+                           measure.vars = grep("\\d{1,4}-\\d{2,2}-\\d{2,2}",names(dt)),
                            variable.name = "Date",
                            value.name = outcomename)
     return(dt)
@@ -87,18 +86,20 @@ usafactsdata <- function() {
 
   #merge the data frames
   usafacts <- data.table::merge.data.table(confirmed, deaths,
-                         by = c("countyFIPS", "County Name", "State", "stateFIPS", "Date"))
+                         by = c("countyFIPS", "County Name", "State", "StateFIPS", "Date"))
+
   #currently (5/5/2020) am renaming to match the csse data convention
   data.table::setnames(usafacts, old=c("countyFIPS", "County Name", "State"), new=c("FIPS", "Admin2", "Province_State"))
-  usafacts[,Date:=as.Date(Date,"%m/%d/%y")]
+
+  #usafacts[,Date:=as.Date(Date,"%m/%d/%y")]
 
   #change FIPS to five character code, using state FIPS if unallocated
   #and using the county_fips if the data are allocated to specific county
-  usafacts[, FIPS:= dplyr::if_else(stringr::str_starts(Admin2,"Statewide Unallocated"),
-                            stringr::str_pad(stateFIPS,width=5,side="left",pad="0"),
+  usafacts[, FIPS:= data.table::fifelse(stringr::str_starts(Admin2,"Statewide Unallocated"),
+                            stringr::str_pad(StateFIPS,width=5,side="left",pad="0"),
                             stringr::str_pad(FIPS,width=5,side="left",pad="0"))]
   #drop the stateFIPS columns
-  usafacts$stateFIPS = NULL
+  usafacts$StateFIPS = NULL
 
   usafacts[,`:=`(Confirmed=c(cumConfirmed[1],diff(cumConfirmed)),
              Deaths = c(cumDeaths[1], diff(cumDeaths))), by=FIPS]
