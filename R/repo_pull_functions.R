@@ -7,7 +7,7 @@
 #' @export
 #' @examples
 #' cssedata("jhudata/")
-cssedata <- function(gitpath="csse", updategit=F) {
+cssedata <- function(gitpath=NULL, updategit=F) {
 
   read_jhu_wide_us_dt <- function(fname, outcomename) {
     dt <- data.table::fread(fname,showProgress = FALSE)

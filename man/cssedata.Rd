@@ -4,7 +4,7 @@
 \alias{cssedata}
 \title{Pull the CSSE data from the repo}
 \usage{
-cssedata(gitpath = "csse", updategit = F)
+cssedata(gitpath = NULL, updategit = F)
 }
 \arguments{
 \item{gitpath}{path to local repo (default is NULL, in which case, a live version is directly pulled using url)}
