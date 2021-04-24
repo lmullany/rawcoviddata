@@ -177,5 +177,45 @@ dxtestingdata <- function() {
   return(dxtest[])
 }
 
+#' pull data with improved speed
+#'
+#' This function pulls state level testing data from private and public labs, aggregated at state level
+#' @export
+#' @examples
+#' dxtestingdata()
+
+fast_pull <- function() {
+
+  base_url = "https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/"
+  c_url = paste0(base_url, "time_series_covid19_confirmed_US.csv")
+  d_url = paste0(base_url, "time_series_covid19_deaths_US.csv")
+
+  #get cases
+  c = fread(c_url, showProgress = F, drop=c(1:4, 6:11))[!is.na(FIPS)]
+  #get deaths
+  d = fread(d_url, showProgress = F, drop=c(1:4, 8:11))[!is.na(FIPS)]
+  #remove pop from deaths
+  p = d[,c(1:4)]
+  d = d[,!c(2:4)]
+
+  #melt cases and deaths
+  c = melt(c,id.vars = "FIPS",value.name="cumConfirmed",variable.name = "Date")
+  d = melt(d,id.vars = "FIPS",value.name="cumDeaths",variable.name = "Date")
+
+  #add daily case and deaths
+  c[, Confirmed:=cumConfirmed-shift(cumConfirmed), by=FIPS]
+  d[, Deaths:=cumDeaths-shift(cumDeaths), by=FIPS]
+
+  #cbind cases, and deaths, and merge with pop
+  res = cbind(c,d[,c(3,4)])[p,on="FIPS"]
+
+  #if cumConfirmed is 0 , then Confirmed must be (same with deaths)
+  res[cumConfirmed==0,Confirmed:=0]
+  res[cumDeaths==0,Deaths:=0]
+
+  return(res)
+
+
+}
 
 
