@@ -38,7 +38,7 @@ us_empirical_by_level <- function(empirical_source=c("csse","usafacts"),
   }
 
   if(emp_type=="csse") {
-    empirical_base <- data.table::merge.data.table(cssedata(csse_repo_path, updategit=updategit),
+    empirical_base <- data.table::merge.data.table(cssedata(),
                                                    statepops[,.(Province_State, USPS)],
                                                    by="Province_State")
   }

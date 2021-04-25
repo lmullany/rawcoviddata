@@ -192,8 +192,10 @@ fast_pull <- function() {
 
   #get cases
   c = fread(c_url, showProgress = F, drop=c(1:4, 6:11))[!is.na(FIPS)]
+  c[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
   #get deaths
   d = fread(d_url, showProgress = F, drop=c(1:4, 8:11))[!is.na(FIPS)]
+  d[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
   #remove pop from deaths
   p = d[,c(1:4)]
   d = d[,!c(2:4)]
