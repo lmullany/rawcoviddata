@@ -4,10 +4,10 @@
 #' @param gitpath path to local repo (default is NULL, in which case, a live version is directly pulled using url)
 #' @param updategit option to check for an update to the git repo
 #' @import data.table
-#' @export
+#' @keywords internal
 #' @examples
 #' cssedata("jhudata/")
-cssedata <- function(gitpath=NULL, updategit=F) {
+cssedata_old <- function(gitpath=NULL, updategit=F) {
 
   read_jhu_wide_us_dt <- function(fname, outcomename) {
     dt <- data.table::fread(fname,showProgress = FALSE)
@@ -115,11 +115,11 @@ usafactsdata <- function() {
 #' This function pulls county level data from JHU CSSE repo (directly by defualt, from local repo if provided). Pulls Country Level Data
 #' @param gitpath optional path to local repo
 #' @param updategit option to update the local git repo
-#' @export
+#' @keywords internal
 #' @examples
 #' cssedataglobal("jhudata/")
 #' cssedataglobal()
-cssedataglobal <- function(gitpath=NULL, updategit=F) {
+cssedataglobal_old <- function(gitpath=NULL, updategit=F) {
 
   read_jhu_wide_dt <- function(fname, outcomename) {
     dt <- data.table::fread(fname, showProgress = FALSE)
@@ -177,5 +177,125 @@ dxtestingdata <- function() {
   return(dxtest[])
 }
 
+#' pull data with improved speed
+#'
+#' This function pulls state level testing data from private and public labs, aggregated at state level
+#' @export
+#' @examples
+#' dxtestingdata()
+
+cssedata <- function(gitpath = NULL, updategit=F) {
+
+  urls = get_urls(gitpath = gitpath, updategit = updategit, scope="US")
+  #get cases
+  c = fread(urls$case_url, showProgress = F, drop=c(1:4, 6:11))[!is.na(FIPS)]
+  c[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
+  #get deaths
+  d = fread(urls$death_url, showProgress = F, drop=c(1:4, 8:11))[!is.na(FIPS)]
+  d[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
+  #remove pop from deaths
+  p = d[,c(1:4)]
+  d = d[,!c(2:4)]
+
+  #create a dates lookup table.. for later merging on date.
+  dates = data.table("sDate" = colnames(d)[-1], "Date" = as.Date(colnames(d)[-1], "%m/%d/%y"))
+
+  #melt cases and deaths
+  c = melt(c,id.vars = "FIPS",value.name="cumConfirmed",variable.name = "sDate", variable.factor=FALSE)
+  d = melt(d,id.vars = "FIPS",value.name="cumDeaths",variable.name = "sDate",variable.factor=FALSE)
+
+  #add daily case and deaths
+  c[, Confirmed:=cumConfirmed-shift(cumConfirmed), by=FIPS]
+  d[, Deaths:=cumDeaths-shift(cumDeaths), by=FIPS]
+
+  #cbind cases, and deaths, and merge with pop
+  res = cbind(c,d[,c(3,4)])[p,on="FIPS"]
+
+  #if cumConfirmed is 0 , then Confirmed must be (same with deaths)
+  res[cumConfirmed==0,Confirmed:=0]
+  res[cumDeaths==0,Deaths:=0]
+
+  res <- res[dates,on="sDate"][,!"sDate"]
+
+  return(res)
 
 
+}
+#' Function to pull global data quickly
+#'
+#' Function is faster approach to returning global data
+#' @export
+cssedataglobal <- function(gitpath=NULL, updategit=F) {
+
+  urls = get_urls(gitpath = gitpath, updategit = updategit, scope="global")
+
+  #get cases
+  c = fread(urls$case_url, showProgress = F, drop=c(1,3,4))
+  #get deaths
+  d = fread(urls$death_url, showProgress = F, drop=c(1,3,4))
+
+  #create a dates lookup table.. for later merging on date.
+  dates = data.table("sDate" = colnames(d)[-1], "Date" = as.Date(colnames(d)[-1], "%m/%d/%y"))
+
+  #melt cases and deaths
+  c = melt(c,id.vars = "Country/Region",value.name="cumConfirmed",variable.name = "sDate", variable.factor=FALSE)
+  d = melt(d,id.vars = "Country/Region",value.name="cumDeaths",variable.name = "sDate",variable.factor=FALSE)
+
+  #add over admin unit within country
+  c <- c[, .("cumConfirmed" = sum(cumConfirmed,na.rm = T)), by=.(`Country/Region`,sDate)]
+  d <- d[, .("cumDeaths" = sum(cumDeaths,na.rm=T)), by=.(`Country/Region`,sDate)]
+
+  #add daily case and deaths
+  c[, Confirmed:=cumConfirmed-shift(cumConfirmed), by=`Country/Region`]
+  d[, Deaths:=cumDeaths-shift(cumDeaths), by=`Country/Region`]
+
+  #cbind cases, and deaths, and merge with pop
+  res = cbind(c,d[,c(3,4)])
+
+  #if cumConfirmed is 0 , then Confirmed must be (same with deaths)
+  res[cumConfirmed==0,Confirmed:=0]
+  res[cumDeaths==0,Deaths:=0]
+
+  res <- res[dates,on="sDate"][,!"sDate"]
+
+  return(res)
+
+
+}
+
+#' Function to update git and finalize urls
+#'
+#' Function takes gitpath or NULL, a flag to update the git
+#' and a scope
+#' @param gitpath string path to local git repo, default NULL
+#' @param updategit boolean default FALSE, set to TRUE to update the repo
+#' @param scope = string, one of "US" or "global"
+#' @export
+#' @examples
+#' get_urls(scope="US")
+#' get_urls(scope="global")
+#' get_urls(gitpath="mypath/", updategit=T, scope="US")
+get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
+
+    scope = match.arg(scope)
+
+    if(!is.null(gitpath)) {
+      if(updategit) {
+        tryCatch({git2r::pull(gitpath)}, warning=function(w) {}, error = function(w) {})
+      }
+      #Create pointers to the wide-formatted filenames in the repo that will be read in
+      basedir <- paste0(gitpath, "csse_covid_19_data/csse_covid_19_time_series/")
+    } else {
+      basedir <- "https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/"
+    }
+
+    c_url = paste0(basedir, "time_series_covid19_confirmed_",scope,".csv")
+    d_url = paste0(basedir, "time_series_covid19_deaths_", scope, ".csv")
+
+    return(list("case_url" = c_url,
+                "death_url" = d_url)
+           )
+
+
+
+}

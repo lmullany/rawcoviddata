@@ -2,19 +2,10 @@
 % Please edit documentation in R/repo_pull_functions.R
 \name{cssedataglobal}
 \alias{cssedataglobal}
-\title{Pull the Global CSSE data from the repo}
+\title{Function to pull global data quickly}
 \usage{
 cssedataglobal(gitpath = NULL, updategit = F)
 }
-\arguments{
-\item{gitpath}{optional path to local repo}
-
-\item{updategit}{option to update the local git repo}
-}
 \description{
-This function pulls county level data from JHU CSSE repo (directly by defualt, from local repo if provided). Pulls Country Level Data
-}
-\examples{
-cssedataglobal("jhudata/")
-cssedataglobal()
+Function is faster approach to returning global data
 }

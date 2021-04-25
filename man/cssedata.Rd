@@ -2,18 +2,13 @@
 % Please edit documentation in R/repo_pull_functions.R
 \name{cssedata}
 \alias{cssedata}
-\title{Pull the CSSE data from the repo}
+\title{pull data with improved speed}
 \usage{
 cssedata(gitpath = NULL, updategit = F)
 }
-\arguments{
-\item{gitpath}{path to local repo (default is NULL, in which case, a live version is directly pulled using url)}
-
-\item{updategit}{option to check for an update to the git repo}
-}
 \description{
-This function pull csse data directly from JHU CSSE repo, or from a local clone, if provided
+This function pulls state level testing data from private and public labs, aggregated at state level
 }
 \examples{
-cssedata("jhudata/")
+dxtestingdata()
 }
