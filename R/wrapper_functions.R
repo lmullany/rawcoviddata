@@ -58,7 +58,7 @@ us_empirical_by_level <- function(empirical_source=c("csse","usafacts"),
     setcolorder(county,c("USPS","FIPS", "Admin2", "Population","Date"))
 
     state <- data.table::copy(empirical_base)
-    state <- state[,lapply(.SD, sum), by=c("USPS","Date"), .SDcols=c("cumConfirmed","cumDeaths","Confirmed", "Deaths")]
+    state <- state[,lapply(.SD, sum, na.rm=T), by=c("USPS","Date"), .SDcols=c("cumConfirmed","cumDeaths","Confirmed", "Deaths")]
     state[statepops, Population:=i.Population, on="USPS"]
     setcolorder(state,c("USPS","Population","Date"))
     if(!is.null(filterdates)) {

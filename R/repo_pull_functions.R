@@ -242,8 +242,8 @@ cssedataglobal <- function(gitpath=NULL, updategit=F) {
   d = melt(d,id.vars = "Country/Region",value.name="cumDeaths",variable.name = "sDate",variable.factor=FALSE)
 
   #add over admin unit within country
-  c <- c[, .("cumConfirmed" = sum(cumConfirmed)), by=.(`Country/Region`,sDate)]
-  d <- d[, .("cumDeaths" = sum(cumDeaths)), by=.(`Country/Region`,sDate)]
+  c <- c[, .("cumConfirmed" = sum(cumConfirmed,na.rm = T)), by=.(`Country/Region`,sDate)]
+  d <- d[, .("cumDeaths" = sum(cumDeaths,na.rm=T)), by=.(`Country/Region`,sDate)]
 
   #add daily case and deaths
   c[, Confirmed:=cumConfirmed-shift(cumConfirmed), by=`Country/Region`]
