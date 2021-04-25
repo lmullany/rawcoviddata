@@ -4,10 +4,10 @@
 #' @param gitpath path to local repo (default is NULL, in which case, a live version is directly pulled using url)
 #' @param updategit option to check for an update to the git repo
 #' @import data.table
-#' @export
+#' @keywords internal
 #' @examples
 #' cssedata("jhudata/")
-cssedata <- function(gitpath=NULL, updategit=F) {
+cssedata_old <- function(gitpath=NULL, updategit=F) {
 
   read_jhu_wide_us_dt <- function(fname, outcomename) {
     dt <- data.table::fread(fname,showProgress = FALSE)
@@ -115,11 +115,11 @@ usafactsdata <- function() {
 #' This function pulls county level data from JHU CSSE repo (directly by defualt, from local repo if provided). Pulls Country Level Data
 #' @param gitpath optional path to local repo
 #' @param updategit option to update the local git repo
-#' @export
+#' @keywords internal
 #' @examples
 #' cssedataglobal("jhudata/")
 #' cssedataglobal()
-cssedataglobal <- function(gitpath=NULL, updategit=F) {
+cssedataglobal_old <- function(gitpath=NULL, updategit=F) {
 
   read_jhu_wide_dt <- function(fname, outcomename) {
     dt <- data.table::fread(fname, showProgress = FALSE)
@@ -184,17 +184,14 @@ dxtestingdata <- function() {
 #' @examples
 #' dxtestingdata()
 
-fast_pull <- function() {
+cssedata <- function(gitpath = NULL, updategit=F) {
 
-  base_url = "https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/"
-  c_url = paste0(base_url, "time_series_covid19_confirmed_US.csv")
-  d_url = paste0(base_url, "time_series_covid19_deaths_US.csv")
-
+  urls = get_urls(gitpath = gitpath, updategit = updategit, scope="US")
   #get cases
-  c = fread(c_url, showProgress = F, drop=c(1:4, 6:11))[!is.na(FIPS)]
+  c = fread(urls$case_url, showProgress = F, drop=c(1:4, 6:11))[!is.na(FIPS)]
   c[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
   #get deaths
-  d = fread(d_url, showProgress = F, drop=c(1:4, 8:11))[!is.na(FIPS)]
+  d = fread(urls$death_url, showProgress = F, drop=c(1:4, 8:11))[!is.na(FIPS)]
   d[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
   #remove pop from deaths
   p = d[,c(1:4)]
@@ -228,16 +225,14 @@ fast_pull <- function() {
 #'
 #' Function is faster approach to returning global data
 #' @export
-fast_pull_global <- function() {
+cssedataglobal <- function(gitpath=NULL, updategit=F) {
 
-  base_url = "https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/"
-  c_url = paste0(base_url, "time_series_covid19_confirmed_global.csv")
-  d_url = paste0(base_url, "time_series_covid19_deaths_global.csv")
+  urls = get_urls(gitpath = gitpath, updategit = updategit, scope="global")
 
   #get cases
-  c = fread(c_url, showProgress = F, drop=c(1,3,4))
+  c = fread(urls$case_url, showProgress = F, drop=c(1,3,4))
   #get deaths
-  d = fread(d_url, showProgress = F, drop=c(1,3,4))
+  d = fread(urls$death_url, showProgress = F, drop=c(1,3,4))
 
   #create a dates lookup table.. for later merging on date.
   dates = data.table("sDate" = colnames(d)[-1], "Date" = as.Date(colnames(d)[-1], "%m/%d/%y"))
@@ -268,3 +263,39 @@ fast_pull_global <- function() {
 
 }
 
+#' Function to update git and finalize urls
+#'
+#' Function takes gitpath or NULL, a flag to update the git
+#' and a scope
+#' @param gitpath string path to local git repo, default NULL
+#' @param updategit boolean default FALSE, set to TRUE to update the repo
+#' @param scope = string, one of "US" or "global"
+#' @export
+#' @examples
+#' get_urls(scope="US")
+#' get_urls(scope="global")
+#' get_urls(gitpath="mypath/", updategit=T, scope="US")
+get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
+
+    scope = match.arg(scope)
+
+    if(!is.null(gitpath)) {
+      if(updategit) {
+        tryCatch({git2r::pull(gitpath)}, warning=function(w) {}, error = function(w) {})
+      }
+      #Create pointers to the wide-formatted filenames in the repo that will be read in
+      basedir <- paste0(gitpath, "csse_covid_19_data/csse_covid_19_time_series/")
+    } else {
+      basedir <- "https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/"
+    }
+
+    c_url = paste0(basedir, "time_series_covid19_confirmed_",scope,".csv")
+    d_url = paste0(basedir, "time_series_covid19_deaths_", scope, ".csv")
+
+    return(list("case_url" = c_url,
+                "death_url" = d_url)
+           )
+
+
+
+}

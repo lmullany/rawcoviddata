@@ -38,7 +38,7 @@ us_empirical_by_level <- function(empirical_source=c("csse","usafacts"),
   }
 
   if(emp_type=="csse") {
-    empirical_base <- data.table::merge.data.table(cssedata(),
+    empirical_base <- data.table::merge.data.table(cssedata(gitpath = csse_repo_path,updategit = updategit),
                                                    statepops[,.(Province_State, USPS)],
                                                    by="Province_State")
   }
@@ -48,7 +48,7 @@ us_empirical_by_level <- function(empirical_source=c("csse","usafacts"),
     empirical_base <- empirical_base[!is.na(FIPS)]
 
     #add county population
-    empirical_base[countypops,Population:=i.Population, on="FIPS"]
+    #empirical_base[countypops,Population:=i.Population, on="FIPS"]
 
     county <- data.table::copy(empirical_base)
     if(!is.null(filterdates)) {
