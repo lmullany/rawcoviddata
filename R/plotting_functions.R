@@ -14,7 +14,7 @@
 #' plot_single_location(us,yvar="Deaths")
 plot_single_location <- function(dt,sm="phat",xvar="Date",yvar="Confirmed",...) {
 
-  plt <- ggplot2::ggplot(dt, ggplot2::aes(x=!!rlang::sym(xvar))) +
+  plt <- ggplot2::ggplot(dt[get(yvar)>=0], ggplot2::aes(x=!!rlang::sym(xvar))) +
     ggplot2::geom_point(ggplot2::aes(y=!!rlang::sym(yvar)), color="black") +
     ggplot2::geom_line(ggplot2::aes(y=!!rlang::sym(sm)), color="blue", size=1.5)
 
