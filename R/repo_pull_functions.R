@@ -188,11 +188,16 @@ cssedata <- function(gitpath = NULL, updategit=F) {
 
   urls = get_urls(gitpath = gitpath, updategit = updategit, scope="US")
   #get cases
-  c = fread(urls$case_url, showProgress = F, drop=c(1:4, 6:11))[!is.na(FIPS)]
+  c = fread(urls$case_url, showProgress = F, drop=c(2:4, 6:11))#[!is.na(FIPS)]
+  c[is.na(FIPS), FIPS:=UID %% 84000000]
+  c$UID <- NULL
   c[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
+
   #get deaths
-  d = fread(urls$death_url, showProgress = F, drop=c(1:4, 8:11))[!is.na(FIPS)]
+  d = fread(urls$death_url, showProgress = F, drop=c(2:4, 8:11))#[!is.na(FIPS)]
+  d[is.na(FIPS), FIPS:=UID %% 84000000]
   d[, FIPS:=stringr::str_pad(FIPS,width=5,pad="0",side="left")]
+  d$UID <- NULL
   #remove pop from deaths
   p = d[,c(1:4)]
   d = d[,!c(2:4)]
