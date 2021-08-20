@@ -211,9 +211,9 @@ cssedata <- function(gitpath = NULL, updategit=F) {
   #cbind cases, and deaths, and merge with pop
   res = cbind(c,d[,c(3,4)])[p,on="FIPS"]
 
-  #if cumConfirmed is 0 , then Confirmed must be (same with deaths)
-  res[cumConfirmed==0,Confirmed:=0]
-  res[cumDeaths==0,Deaths:=0]
+  #if cumConfirmed is 0 and (confirmed is na or positive) , then Confirmed must be 0 (same with deaths)
+  res[cumConfirmed==0 & (is.na(Confirmed) | Confirmed>0),Confirmed:=0]
+  res[cumDeaths==0 & (is.na(Deaths) | Deaths>0),Deaths:=0]
 
   res <- res[dates,on="sDate"][,!"sDate"]
 
@@ -252,9 +252,10 @@ cssedataglobal <- function(gitpath=NULL, updategit=F) {
   #cbind cases, and deaths, and merge with pop
   res = cbind(c,d[,c(3,4)])
 
-  #if cumConfirmed is 0 , then Confirmed must be (same with deaths)
-  res[cumConfirmed==0,Confirmed:=0]
-  res[cumDeaths==0,Deaths:=0]
+
+  #if cumConfirmed is 0 and (confirmed is na or positive) , then Confirmed must be 0 (same with deaths)
+  res[cumConfirmed==0 & (is.na(Confirmed) | Confirmed>0),Confirmed:=0]
+  res[cumDeaths==0 & (is.na(Deaths) | Deaths>0),Deaths:=0]
 
   res <- res[dates,on="sDate"][,!"sDate"]
 
