@@ -4,11 +4,19 @@
 \alias{cssedata}
 \title{pull data with improved speed}
 \usage{
-cssedata(gitpath = NULL, updategit = F)
+cssedata(gitpath = NULL, updategit = F, return_compact = F)
+}
+\arguments{
+\item{gitpath}{NULL if local gitpath is provided then a filename from this locaiton will be extracted}
+
+\item{updategit}{FALSE; if set to TRUE the local git will be updated}
+
+\item{return_compact}{FALSE; if set to TRUE a compact version of c,d,p will be returned. This
+is slightly faster; data will be returned in wide format as initial downloaded from the JHU CSSE site}
 }
 \description{
 This function pulls state level testing data from private and public labs, aggregated at state level
 }
 \examples{
-dxtestingdata()
+cssedata()
 }
