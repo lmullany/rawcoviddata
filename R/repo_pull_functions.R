@@ -180,11 +180,14 @@ dxtestingdata <- function() {
 #' pull data with improved speed
 #'
 #' This function pulls state level testing data from private and public labs, aggregated at state level
+#' @param gitpath NULL if local gitpath is provided then a filename from this locaiton will be extracted
+#' @param updategit FALSE; if set to TRUE the local git will be updated
+#' @param return_compact FALSE; if set to TRUE a compact version of c,d,p will be returned. This
+#' is slightly faster; data will be returned in wide format as initial downloaded from the JHU CSSE site
 #' @export
 #' @examples
-#' dxtestingdata()
-
-cssedata <- function(gitpath = NULL, updategit=F) {
+#' cssedata()
+cssedata <- function(gitpath = NULL, updategit=F, return_compact = F) {
 
   urls = get_urls(gitpath = gitpath, updategit = updategit, scope="US")
   #get cases
@@ -201,6 +204,8 @@ cssedata <- function(gitpath = NULL, updategit=F) {
   #remove pop from deaths
   p = d[,c(1:4)]
   d = d[,!c(2:4)]
+
+  if(return_compact) return(list("c" = c,"d" = d,"p" =p))
 
   #create a dates lookup table.. for later merging on date.
   dates = data.table("sDate" = colnames(d)[-1], "Date" = as.Date(colnames(d)[-1], "%m/%d/%y"))
@@ -302,6 +307,69 @@ get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
                 "death_url" = d_url)
            )
 
-
-
 }
+
+#' Function to just get a single state given cdp
+#'
+#' Function use compact csse data (c,d,p) to return
+#' a datatable for a specific state only
+#' @param state string
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @param p compact version of population
+#' @export
+#' @examples
+#' get_state_from_cdp("Maryland", c,d,p)
+get_state_from_cdp <- function(state,c,d,p) {
+  fips = p[Province_State == state,FIPS]
+  return(quick_melt(c[FIPS %chin% fips], d[FIPS %chin% fips]))
+}
+
+#' Function to just get a US from c,d,p
+#'
+#' Function use compact csse data (c,d,p) to return
+#' a datatable for entire US
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @param p compact version of population
+#' @export
+#' @examples
+#' get_us_from_cdp(c,d,p)
+get_us_from_cdp <- function(c,d,p) {
+  return(quick_melt(c,d))
+}
+
+#' Function to just get a US county from c,d,p
+#'
+#' Function use compact csse data (c,d,p) to return
+#' a datatable for entire US
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @export
+#' @examples
+#' get_county_from_cdp(21027,c,d)
+get_county_from_cdp <- function(fips,c,d) {
+  k = cbind(t(c[FIPS==fips,-1]), t(d[FIPS==fips,-1]))
+  k <- data.table(date=rownames(k), cumConfirmed = k[,1], cumDeaths = k[,2])
+  k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
+  return(k)
+}
+
+
+#' Function to quickly melt c an d into a data table
+#'
+#' Given a compact version of cases and deaths, function
+#' will convert the information into a datatable
+#' first summing over all the rows of c and d
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @export
+#' @examples
+#' quick_melt(c,d)
+quick_melt <- function(c,d) {
+  k <- cbind(t(c[,lapply(.SD,sum), .SDcols=-1]),t(d[,lapply(.SD,sum), .SDcols=-1]))
+  k <- data.table(date=rownames(k), cumConfirmed = k[,1], cumDeaths = k[,2])
+  k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
+  return(k)
+}
+
