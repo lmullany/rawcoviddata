@@ -320,6 +320,37 @@ get_state_from_cdp <- function(state,c,d,p) {
   return(quick_melt(c[FIPS %chin% fips], d[FIPS %chin% fips]))
 }
 
+#' Function to just get a US from c,d,p
+#'
+#' Function use compact csse data (c,d,p) to return
+#' a datatable for entire US
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @param p compact version of population
+#' @export
+#' @examples
+#' get_us_from_cdp(c,d,p)
+get_us_from_cdp <- function(c,d,p) {
+  return(quick_melt(c,d))
+}
+
+#' Function to just get a US county from c,d,p
+#'
+#' Function use compact csse data (c,d,p) to return
+#' a datatable for entire US
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @export
+#' @examples
+#' get_county_from_cdp(21027,c,d)
+get_county_from_cdp <- function(fips,c,d) {
+  k = cbind(t(c[FIPS==fips,-1]), t(d[FIPS==fips,-1]))
+  k <- data.table(date=rownames(k), cumConfirmed = k[,1], cumDeaths = k[,2])
+  k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
+  return(k)
+}
+
+
 #' Function to quickly melt c an d into a data table
 #'
 #' Given a compact version of cases and deaths, function
