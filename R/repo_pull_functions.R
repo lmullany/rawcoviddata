@@ -314,43 +314,41 @@ get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
 #' Function use compact csse data (c,d,p) to return
 #' a datatable for a specific state only
 #' @param state string
-#' @param c compact version of confirmed cases
-#' @param d compact version of deaths
-#' @param p compact version of population
+#' @param cdp compact version of cases, deaths, population as return from
+#' cssedata(return_compact=T)
 #' @export
 #' @examples
-#' get_state_from_cdp("Maryland", c,d,p)
-get_state_from_cdp <- function(state,c,d,p) {
-  fips = p[Province_State == state,FIPS]
-  return(quick_melt(c[FIPS %chin% fips], d[FIPS %chin% fips]))
+#' get_state_from_cdp("Maryland", cdp)
+get_state_from_cdp <- function(state,cdp) {
+  fips = cdp$p[Province_State == state,FIPS]
+  return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips]))
 }
 
 #' Function to just get a US from c,d,p
 #'
 #' Function use compact csse data (c,d,p) to return
 #' a datatable for entire US
-#' @param c compact version of confirmed cases
-#' @param d compact version of deaths
-#' @param p compact version of population
+#' @param cdp compact version of cases, deaths, population as return from
+#' cssedata(return_compact=T)
 #' @export
 #' @examples
 #' get_us_from_cdp(c,d,p)
-get_us_from_cdp <- function(c,d,p) {
-  return(quick_melt(c,d))
+get_us_from_cdp <- function(cdp) {
+  return(quick_melt(cdp$c,cdp$d))
 }
 
 #' Function to just get a US county from c,d,p
 #'
 #' Function use compact csse data (c,d,p) to return
 #' a datatable for entire US
-#' @param c compact version of confirmed cases
-#' @param d compact version of deaths
+#' @param cdp compact version of cases, deaths, population as return from
+#' cssedata(return_compact=T)
 #' @export
 #' @examples
-#' get_county_from_cdp(21027,c,d)
-get_county_from_cdp <- function(fips,c,d) {
-  k = cbind(t(c[FIPS==fips,-1]), t(d[FIPS==fips,-1]))
-  k <- data.table(date=rownames(k), cumConfirmed = k[,1], cumDeaths = k[,2])
+#' get_county_from_cdp(21027,cdp)
+get_county_from_cdp <- function(fips,cdp) {
+  k = cbind(t(cdp$c[FIPS==fips,-1]), t(cdp$d[FIPS==fips,-1]))
+  k <- data.table(Date=data.table::as.IDate(rownames(k),"%m/%d/%y"), cumConfirmed = k[,1], cumDeaths = k[,2])
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
   return(k)
 }
@@ -368,7 +366,7 @@ get_county_from_cdp <- function(fips,c,d) {
 #' quick_melt(c,d)
 quick_melt <- function(c,d) {
   k <- cbind(t(c[,lapply(.SD,sum), .SDcols=-1]),t(d[,lapply(.SD,sum), .SDcols=-1]))
-  k <- data.table(date=rownames(k), cumConfirmed = k[,1], cumDeaths = k[,2])
+  k <- data.table(Date=data.table::as.IDate(rownames(k),"%m/%d/%y"), cumConfirmed = k[,1], cumDeaths = k[,2])
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
   return(k)
 }
