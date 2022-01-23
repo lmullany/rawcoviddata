@@ -4,21 +4,18 @@
 \alias{get_state_from_cdp}
 \title{Function to just get a single state given cdp}
 \usage{
-get_state_from_cdp(state, c, d, p)
+get_state_from_cdp(state, cdp)
 }
 \arguments{
 \item{state}{string}
 
-\item{c}{compact version of confirmed cases}
-
-\item{d}{compact version of deaths}
-
-\item{p}{compact version of population}
+\item{cdp}{compact version of cases, deaths, population as return from
+cssedata(return_compact=T)}
 }
 \description{
 Function use compact csse data (c,d,p) to return
 a datatable for a specific state only
 }
 \examples{
-get_state_from_cdp("Maryland", c,d,p)
+get_state_from_cdp("Maryland", cdp)
 }

@@ -4,17 +4,16 @@
 \alias{get_county_from_cdp}
 \title{Function to just get a US county from c,d,p}
 \usage{
-get_county_from_cdp(fips, c, d)
+get_county_from_cdp(fips, cdp)
 }
 \arguments{
-\item{c}{compact version of confirmed cases}
-
-\item{d}{compact version of deaths}
+\item{cdp}{compact version of cases, deaths, population as return from
+cssedata(return_compact=T)}
 }
 \description{
 Function use compact csse data (c,d,p) to return
 a datatable for entire US
 }
 \examples{
-get_county_from_cdp(21027,c,d)
+get_county_from_cdp(21027,cdp)
 }
