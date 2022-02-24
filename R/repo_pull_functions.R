@@ -205,10 +205,16 @@ cssedata <- function(gitpath = NULL, updategit=F, return_compact = F) {
   p = d[,c(1:4)]
   d = d[,!c(2:4)]
 
+  # replace names of the date columns
+  dates = seq.Date(as.Date("2020-01-22"), by=1, length.out = ncol(c)-1)
+  nnames = c("FIPS", as.character(dates))
+  data.table::setnames(c,nnames)
+  data.table::setnames(d,nnames)
+
   if(return_compact) return(list("c" = c,"d" = d,"p" =p))
 
   #create a dates lookup table.. for later merging on date.
-  dates = data.table("sDate" = colnames(d)[-1], "Date" = as.Date(colnames(d)[-1], "%m/%d/%y"))
+  dates = data.table("sDate" = colnames(d)[-1], "Date" = dates)
 
   #melt cases and deaths
   c = melt(c,id.vars = "FIPS",value.name="cumConfirmed",variable.name = "sDate", variable.factor=FALSE)
@@ -225,7 +231,8 @@ cssedata <- function(gitpath = NULL, updategit=F, return_compact = F) {
   res[cumConfirmed==0 & (is.na(Confirmed) | Confirmed>0),Confirmed:=0]
   res[cumDeaths==0 & (is.na(Deaths) | Deaths>0),Deaths:=0]
 
-  res <- res[dates,on="sDate"][,!"sDate"]
+  #res[, Date:=data.table::as.IDate(Date)]
+  res <- res[dates, on="sDate"][,!"sDate"]
 
   return(res)
 
@@ -314,41 +321,44 @@ get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
 #' Function use compact csse data (c,d,p) to return
 #' a datatable for a specific state only
 #' @param state string
-#' @param cdp compact version of cases, deaths, population as return from
-#' cssedata(return_compact=T)
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @param p compact version of population
 #' @export
 #' @examples
-#' get_state_from_cdp("Maryland", cdp)
-get_state_from_cdp <- function(state,cdp) {
-  fips = cdp$p[Province_State == state,FIPS]
-  return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips]))
+#' get_state_from_cdp("Maryland", c,d,p)
+get_state_from_cdp <- function(state,c,d,p) {
+  fips = p[Province_State == state,FIPS]
+  return(quick_melt(c[FIPS %chin% fips], d[FIPS %chin% fips]))
 }
 
 #' Function to just get a US from c,d,p
 #'
 #' Function use compact csse data (c,d,p) to return
 #' a datatable for entire US
-#' @param cdp compact version of cases, deaths, population as return from
-#' cssedata(return_compact=T)
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
+#' @param p compact version of population
 #' @export
 #' @examples
 #' get_us_from_cdp(c,d,p)
-get_us_from_cdp <- function(cdp) {
-  return(quick_melt(cdp$c,cdp$d))
+get_us_from_cdp <- function(c,d) {
+  return(quick_melt(c,d))
 }
 
 #' Function to just get a US county from c,d,p
 #'
 #' Function use compact csse data (c,d,p) to return
 #' a datatable for entire US
-#' @param cdp compact version of cases, deaths, population as return from
-#' cssedata(return_compact=T)
+#' @param c compact version of confirmed cases
+#' @param d compact version of deaths
 #' @export
 #' @examples
-#' get_county_from_cdp(21027,cdp)
-get_county_from_cdp <- function(fips,cdp) {
-  k = cbind(t(cdp$c[FIPS==fips,-1]), t(cdp$d[FIPS==fips,-1]))
-  k <- data.table(Date=data.table::as.IDate(rownames(k),"%m/%d/%y"), cumConfirmed = k[,1], cumDeaths = k[,2])
+#' get_county_from_cdp(21027,c,d)
+get_county_from_cdp <- function(fips,c,d) {
+  k = cbind(t(c[FIPS==fips,-1]), t(d[FIPS==fips,-1]))
+  dates = seq.Date(as.Date("2020-01-22"), by=1, length.out = ncol(c)-1)
+  k <- data.table(Date=dates, cumConfirmed = k[,1], cumDeaths = k[,2])
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
   return(k)
 }
@@ -366,7 +376,8 @@ get_county_from_cdp <- function(fips,cdp) {
 #' quick_melt(c,d)
 quick_melt <- function(c,d) {
   k <- cbind(t(c[,lapply(.SD,sum), .SDcols=-1]),t(d[,lapply(.SD,sum), .SDcols=-1]))
-  k <- data.table(Date=data.table::as.IDate(rownames(k),"%m/%d/%y"), cumConfirmed = k[,1], cumDeaths = k[,2])
+  dates = seq.Date(as.Date("2020-01-22"), by=1, length.out = ncol(c)-1)
+  k <- data.table(Date=dates, cumConfirmed = k[,1], cumDeaths = k[,2])
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
   return(k)
 }

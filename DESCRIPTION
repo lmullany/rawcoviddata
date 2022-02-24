@@ -20,6 +20,7 @@ Imports:
     dplyr,
     mgcv,
     ggplot2,
-    rlang
+    rlang,
+    lubridate
 Depends: 
     R (>= 2.10)
