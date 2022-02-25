@@ -10,7 +10,7 @@ get_all_states_from_cdp(cdp)
 \item{cdp}{this is a cdp list as returned by \code{cssedata(return_compact=T)}}
 }
 \description{
-This function extends the approach of \code{get_state_from_cdp()}, returining
+This function extends the approach of \code{get_state_from_cdp()}, returning
 all states in long format, rather than a single state
 }
 \examples{
