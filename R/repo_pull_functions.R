@@ -411,7 +411,7 @@ convert_weekly <- function(df, byvars=NULL) {
 
 #'Get all states from cdp
 #'
-#'This function extends the approach of `get_state_from_cdp()`, returining
+#'This function extends the approach of `get_state_from_cdp()`, returning
 #'all states in long format, rather than a single state
 #'
 #' @param cdp this is a cdp list as returned by `cssedata(return_compact=T)`
@@ -430,6 +430,28 @@ get_all_states_from_cdp <- function(cdp) {
     Deaths=cumDeaths-shift(cumDeaths)), by=.(Province_State)][
       ,`:=`(Date=rep(as.IDate(colnames(cdp$c)[-1], "%m/%d/%y"),58),
             variable=NULL)][,.(Province_State, Date,cumConfirmed, cumDeaths, Confirmed, Deaths)][]
+
+}
+
+#'Get all counties from cdp
+#'
+#'This function extends the approach of `get_county_from_cdp()`, returning
+#'all counties in long format, rather than a single county
+#'
+#' @param cdp this is a cdp list as returned by `cssedata(return_compact=T)`
+#' @export
+#' @examples
+#' get_all_counties_from_cdp(cdp)
+get_all_counties_from_cdp <- function(cdp) {
+  dates = as.IDate(colnames(cdp$c)[-1], "%m/%d/%y")
+  data.table(
+    FIPS = rep(cdp$c$FIPS, each=length(dates)),
+    Date = rep(dates,times=nrow(cdp$c)),
+    cumConfirmed = as.vector(t(cdp$c[,-1])),
+    cumDeaths = as.vector(t(cdp$d[,-1]))
+  )[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),
+           Deaths=cumDeaths-shift(cumDeaths)),
+    by=.(FIPS)]
 
 }
 
