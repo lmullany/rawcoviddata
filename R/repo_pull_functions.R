@@ -371,3 +371,33 @@ quick_melt <- function(c,d) {
   return(k)
 }
 
+#'Convert long csse data from daily to weekly format
+#'
+#'This function will take a long format csse file (for example
+#'something like that returned from `get_us_from_cdp(cdp)`, or
+#'the long format returned from `cssedata()`, or the geo-level
+#'elements in the list returney `us_empirical_by_level()`) and
+#'convert it from daily data to weekly format.  The function will
+#'use epiweek and epiyear from the lubridate package, and will
+#'define the end of the week as day of week 7. The general approach
+#'of the function is to sum up incident outcomes by epiweek/epiyear
+#'combinations, and then generate weekly cumulative data by using
+#'baseR `cumsum` function.
+#'
+#' @param df this is the source long formatted data described above
+#' @param byvars defaults to NULL, character vector of columns names to
+#' group by
+#' @export
+#' @examples
+#' convert_weekly(us)
+#' convert_weekly(get_state_from_cdp("Texas",cdp), byvar="USPS")
+#' convert_weekly(county, byvars="FIPS")
+convert_weekly <- function(df, byvars=NULL) {
+  # get day-of-week, wk,yr
+  df[,`:=`(wk=lubridate::epiweek(Date), yr=lubridate::epiyear(Date))]
+  # get column Sums, by byvars,
+  df = df[,as.list(colSums(.SD,na.rm=T)), by=c(byvars,"wk","yr"),.SDcols=c("Confirmed", "Deaths")]
+  # add cumulative columns
+  df[,`:=`(cumConfirmed=cumsum(Confirmed),cumDeaths=cumsum(Deaths)),
+     by=byvars][]
+}
