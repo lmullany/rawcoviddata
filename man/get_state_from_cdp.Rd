@@ -4,7 +4,7 @@
 \alias{get_state_from_cdp}
 \title{Function to just get a single state given cdp}
 \usage{
-get_state_from_cdp(state, cdp)
+get_state_from_cdp(state = NULL, cdp)
 }
 \arguments{
 \item{state}{string}

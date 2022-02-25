@@ -319,9 +319,14 @@ get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
 #' @export
 #' @examples
 #' get_state_from_cdp("Maryland", cdp)
-get_state_from_cdp <- function(state,cdp) {
-  fips = cdp$p[Province_State == state,FIPS]
-  return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips]))
+get_state_from_cdp <- function(state=NULL,cdp) {
+  if(is.null(state)) {
+
+  } else {
+    fips = cdp$p[Province_State == state,FIPS]
+    return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips]))
+  }
+
 }
 
 #' Function to just get a US from c,d,p
@@ -401,3 +406,30 @@ convert_weekly <- function(df, byvars=NULL) {
   df[,`:=`(cumConfirmed=cumsum(Confirmed),cumDeaths=cumsum(Deaths)),
      by=byvars][]
 }
+
+
+
+#'Get all states from cdp
+#'
+#'This function extends the approach of `get_state_from_cdp()`, returining
+#'all states in long format, rather than a single state
+#'
+#' @param cdp this is a cdp list as returned by `cssedata(return_compact=T)`
+#' @export
+#' @examples
+#' get_all_states_from_cdp(cdp)
+
+get_all_states_from_cdp <- function(cdp) {
+  cbind(
+    data.table::melt(cdp$c[cdp$p[, .(FIPS,Province_State)], on="FIPS"][
+      , lapply(.SD, sum,na.rm=T),by=.(Province_State), .SDcols=-1], id="Province_State", value.name = "cumConfirmed"),
+    data.table::melt(cdp$d[cdp$p[, .(FIPS,Province_State)], on="FIPS"][
+      , lapply(.SD, sum,na.rm=T),by=.(Province_State), .SDcols=-1], id="Province_State", value.name="cumDeaths")[,.(cumDeaths)]
+  )[,`:=`(
+    Confirmed=cumConfirmed-shift(cumConfirmed),
+    Deaths=cumDeaths-shift(cumDeaths)), by=.(Province_State)][
+      ,`:=`(Date=rep(as.IDate(colnames(cdp$c)[-1], "%m/%d/%y"),58),
+            variable=NULL)][,.(Province_State, Date,cumConfirmed, cumDeaths, Confirmed, Deaths)][]
+
+}
+
