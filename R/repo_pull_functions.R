@@ -320,12 +320,13 @@ get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
 #' @export
 #' @examples
 #' get_state_from_cdp(cdp, "MD")
-get_state_from_cdp <- function(cdp, state=NULL) {
+get_state_from_cdp <- function(cdp, state=NULL, fix_cumul=FALSE,type=c("mid", "low", "high")) {
+  type=match.arg(type)
   if(is.null(state)) {
-    return(get_all_states_from_cdp(cdp))
+    return(get_all_states_from_cdp(cdp, fix_cumul=fix_cumul, type=type))
   } else {
     fips = cdp$p[Province_State == statenames()[state_abbreviation==state,state_name],FIPS]
-    return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips])[])
+    return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips], fix_cumul = fix_cumul, type=type)[])
   }
 
 }
@@ -339,8 +340,8 @@ get_state_from_cdp <- function(cdp, state=NULL) {
 #' @export
 #' @examples
 #' get_us_from_cdp(c,d,p)
-get_us_from_cdp <- function(cdp) {
-  return(quick_melt(cdp$c,cdp$d)[])
+get_us_from_cdp <- function(cdp, fix_cumul=FALSE, type=c("mid", "low", "high")) {
+  return(quick_melt(cdp$c,cdp$d, fix_cumul = fix_cumul, type=type)[])
 }
 
 #' Function to just get a US county from c,d,p
@@ -370,9 +371,15 @@ get_county_from_cdp <- function(fips,cdp) {
 #' @export
 #' @examples
 #' quick_melt(c,d)
-quick_melt <- function(c,d) {
+quick_melt <- function(c,d, fix_cumul=FALSE, type=c("mid","low","high")) {
+
+  type=match.arg(type)
+
   k <- cbind(t(c[,lapply(.SD,sum), .SDcols=-1]),t(d[,lapply(.SD,sum), .SDcols=-1]))
   k <- data.table(Date=data.table::as.IDate(rownames(k),"%m/%d/%y"), cumConfirmed = k[,1], cumDeaths = k[,2])
+  if(fix_cumul) {
+    k[, `:=`(cumConfirmed = fix_cumul_counts(cumConfirmed, type=type), cumDeaths=fix_cumul_counts(cumDeaths, type=type))]
+  }
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
   return(k)
 }
@@ -420,15 +427,22 @@ convert_weekly <- function(df, byvars=NULL) {
 #' @examples
 #' get_all_states_from_cdp(cdp)
 
-get_all_states_from_cdp <- function(cdp) {
+get_all_states_from_cdp <- function(cdp, fix_cumul=FALSE, type=c("mid","low","high")) {
+  type=match.arg(type)
+
   p = statenames()[cdp$p, on=.(state_name=Province_State), j=.(FIPS,USPS=state_abbreviation)]
   ps = length(unique(p$USPS))
-  cbind(
+  k = cbind(
     data.table::melt(cdp$c[p, on="FIPS"][
       , lapply(.SD, sum,na.rm=T),by=.(USPS), .SDcols=-1], id="USPS", value.name = "cumConfirmed"),
     data.table::melt(cdp$d[p, on="FIPS"][
       , lapply(.SD, sum,na.rm=T),by=.(USPS), .SDcols=-1], id="USPS", value.name="cumDeaths")[,.(cumDeaths)]
-  )[,`:=`(
+  )
+
+  if(fix_cumul) {
+    k[, `:=`(cumConfirmed = fix_cumul_counts(cumConfirmed, type=type), cumDeaths=fix_cumul_counts(cumDeaths, type=type)), by=.(USPS)]
+  }
+  k[,`:=`(
     Confirmed=cumConfirmed-shift(cumConfirmed),
     Deaths=cumDeaths-shift(cumDeaths)), by=.(USPS)][
       ,`:=`(Date=rep(as.IDate(colnames(cdp$c)[-1], "%m/%d/%y"),ps),
@@ -445,16 +459,75 @@ get_all_states_from_cdp <- function(cdp) {
 #' @export
 #' @examples
 #' get_all_counties_from_cdp(cdp)
-get_all_counties_from_cdp <- function(cdp) {
+get_all_counties_from_cdp <- function(cdp, fix_cumul=F, type=c("mid", "low", "high")) {
+  type=match.arg(type)
   dates = as.IDate(colnames(cdp$c)[-1], "%m/%d/%y")
-  data.table(
+  k <- data.table(
     FIPS = rep(cdp$c$FIPS, each=length(dates)),
     Date = rep(dates,times=nrow(cdp$c)),
     cumConfirmed = as.vector(t(cdp$c[,-1])),
     cumDeaths = as.vector(t(cdp$d[,-1]))
-  )[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),
+  )
+  if(fix_cumul) {
+    k[, `:=`(cumConfirmed = fix_cumul_counts(cumConfirmed, type=type), cumDeaths=fix_cumul_counts(cumDeaths, type=type)), by=.(FIPS)]
+  }
+  k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),
            Deaths=cumDeaths-shift(cumDeaths)),
     by=.(FIPS)]
+}
+
+
+#'correct cumulative, using low strategy
+#' @param x vector of cumulative outcomes
+#' @keyords internal
+#' @examples
+#' c_low(x)
+
+c_low <- function(x) {
+  x[is.na(x)] <- Inf
+  x <- rev(cummin(rev(x)))
+  x[!is.finite(x)] <- 0
+  x <- cummax(x)
+}
+
+#'correct cumulative, using high strategy
+#' @param x vector of cumulative outcomes
+#' @keyords internal
+#' @examples
+#' c_high(x)
+
+c_high <- function(x) {
+  x[is.na(x)] <- 0
+  cummax(x)
+}
+
+#'correct cumulative, using mid strategy
+#' @param x vector of cumulative outcomes
+#' @keyords internal
+#' @examples
+#' c_mid(x)
+
+c_mid <- function(x) {
+  unlagged=x
+  unlagged[is.na(x)] <- Inf
+  lagged = shift(x)
+  lagged[is.na(x)] <- Inf
+
+  max_indices <- which(unlagged < lagged)
+  x[max_indices] <- lagged[max_indices]
+  c_low(x)
 
 }
 
+#' correct cumulative, using low, med, or high strategy
+#' @param x vector of cumulative outcomes
+#' @param type string default is "mid"
+#' @keyords internal
+#' @examples
+#' fix_cumul_counts(x)
+
+
+fix_cumul_counts <- function(x,type=c("mid","low","high")) {
+  type=match.arg(type)
+  list("high"=c_high, "low"=c_low, "mid"=c_mid)[[type]](x)
+}
