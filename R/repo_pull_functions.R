@@ -353,9 +353,13 @@ get_us_from_cdp <- function(cdp, fix_cumul=FALSE, type=c("mid", "low", "high")) 
 #' @export
 #' @examples
 #' get_county_from_cdp(21027,cdp)
-get_county_from_cdp <- function(fips,cdp) {
+get_county_from_cdp <- function(fips,cdp, fix_cumul=FALSE, type=c("mid", "low", "high")) {
+  type=match.arg(type)
   k = cbind(t(cdp$c[FIPS==fips,-1]), t(cdp$d[FIPS==fips,-1]))
   k <- data.table(Date=data.table::as.IDate(rownames(k),"%m/%d/%y"), cumConfirmed = k[,1], cumDeaths = k[,2])
+  if(fix_cumul) {
+    k[, `:=`(cumConfirmed = fix_cumul_counts(cumConfirmed, type=type), cumDeaths=fix_cumul_counts(cumDeaths, type=type))]
+  }
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
   return(k[])
 }
@@ -473,7 +477,7 @@ get_all_counties_from_cdp <- function(cdp, fix_cumul=F, type=c("mid", "low", "hi
   }
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),
            Deaths=cumDeaths-shift(cumDeaths)),
-    by=.(FIPS)]
+    by=.(FIPS)][]
 }
 
 
