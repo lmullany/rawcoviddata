@@ -4,11 +4,15 @@
 \alias{get_us_from_cdp}
 \title{Function to just get a US from c,d,p}
 \usage{
-get_us_from_cdp(cdp)
+get_us_from_cdp(cdp, fix_cumul = FALSE, type = c("mid", "low", "high"))
 }
 \arguments{
 \item{cdp}{compact version of cases, deaths, population as return from
 cssedata(return_compact=T)}
+
+\item{fix_cumul}{(logical, default=F); set to TRUE to fix cumulative data}
+
+\item{type}{(string, default="mid"); strategy to fix cumulative data}
 }
 \description{
 Function use compact csse data (c,d,p) to return

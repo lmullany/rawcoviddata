@@ -4,10 +4,14 @@
 \alias{get_all_states_from_cdp}
 \title{Get all states from cdp}
 \usage{
-get_all_states_from_cdp(cdp)
+get_all_states_from_cdp(cdp, fix_cumul = FALSE, type = c("mid", "low", "high"))
 }
 \arguments{
 \item{cdp}{this is a cdp list as returned by \code{cssedata(return_compact=T)}}
+
+\item{fix_cumul}{(logical, default=F); set to TRUE to fix cumulative data}
+
+\item{type}{(string, default="mid"); strategy to fix cumulative data}
 }
 \description{
 This function extends the approach of \code{get_state_from_cdp()}, returning

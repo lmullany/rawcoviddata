@@ -4,12 +4,16 @@
 \alias{quick_melt}
 \title{Function to quickly melt c an d into a data table}
 \usage{
-quick_melt(c, d)
+quick_melt(c, d, fix_cumul = FALSE, type = c("mid", "low", "high"))
 }
 \arguments{
 \item{c}{compact version of confirmed cases}
 
 \item{d}{compact version of deaths}
+
+\item{fix_cumul}{(logical, default=F); set to TRUE to fix cumulative data}
+
+\item{type}{(string, default="mid"); strategy to fix cumulative data}
 }
 \description{
 Given a compact version of cases and deaths, function
