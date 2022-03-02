@@ -313,18 +313,19 @@ get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
 #'
 #' Function use compact csse data (c,d,p) to return
 #' a datatable for a specific state only
-#' @param state string
 #' @param cdp compact version of cases, deaths, population as return from
 #' cssedata(return_compact=T)
+#' @param state string (default is NULL, will return all states), otherwise specifiy a
+#' specifc state abbreviation (i.e. "TX")
 #' @export
 #' @examples
-#' get_state_from_cdp("Maryland", cdp)
-get_state_from_cdp <- function(state=NULL,cdp) {
+#' get_state_from_cdp(cdp, "MD")
+get_state_from_cdp <- function(cdp, state=NULL) {
   if(is.null(state)) {
-
+    return(get_all_states_from_cdp(cdp))
   } else {
-    fips = cdp$p[Province_State == state,FIPS]
-    return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips]))
+    fips = cdp$p[Province_State == statenames()[state_abbreviation==state,state_name],FIPS]
+    return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips])[])
   }
 
 }
@@ -339,7 +340,7 @@ get_state_from_cdp <- function(state=NULL,cdp) {
 #' @examples
 #' get_us_from_cdp(c,d,p)
 get_us_from_cdp <- function(cdp) {
-  return(quick_melt(cdp$c,cdp$d))
+  return(quick_melt(cdp$c,cdp$d)[])
 }
 
 #' Function to just get a US county from c,d,p
@@ -355,7 +356,7 @@ get_county_from_cdp <- function(fips,cdp) {
   k = cbind(t(cdp$c[FIPS==fips,-1]), t(cdp$d[FIPS==fips,-1]))
   k <- data.table(Date=data.table::as.IDate(rownames(k),"%m/%d/%y"), cumConfirmed = k[,1], cumDeaths = k[,2])
   k[, `:=`(Confirmed=cumConfirmed-shift(cumConfirmed),Deaths=cumDeaths-shift(cumDeaths))]
-  return(k)
+  return(k[])
 }
 
 
@@ -420,16 +421,18 @@ convert_weekly <- function(df, byvars=NULL) {
 #' get_all_states_from_cdp(cdp)
 
 get_all_states_from_cdp <- function(cdp) {
+  p = statenames()[cdp$p, on=.(state_name=Province_State), j=.(FIPS,USPS=state_abbreviation)]
+  ps = length(unique(p$USPS))
   cbind(
-    data.table::melt(cdp$c[cdp$p[, .(FIPS,Province_State)], on="FIPS"][
-      , lapply(.SD, sum,na.rm=T),by=.(Province_State), .SDcols=-1], id="Province_State", value.name = "cumConfirmed"),
-    data.table::melt(cdp$d[cdp$p[, .(FIPS,Province_State)], on="FIPS"][
-      , lapply(.SD, sum,na.rm=T),by=.(Province_State), .SDcols=-1], id="Province_State", value.name="cumDeaths")[,.(cumDeaths)]
+    data.table::melt(cdp$c[p, on="FIPS"][
+      , lapply(.SD, sum,na.rm=T),by=.(USPS), .SDcols=-1], id="USPS", value.name = "cumConfirmed"),
+    data.table::melt(cdp$d[p, on="FIPS"][
+      , lapply(.SD, sum,na.rm=T),by=.(USPS), .SDcols=-1], id="USPS", value.name="cumDeaths")[,.(cumDeaths)]
   )[,`:=`(
     Confirmed=cumConfirmed-shift(cumConfirmed),
-    Deaths=cumDeaths-shift(cumDeaths)), by=.(Province_State)][
-      ,`:=`(Date=rep(as.IDate(colnames(cdp$c)[-1], "%m/%d/%y"),58),
-            variable=NULL)][,.(Province_State, Date,cumConfirmed, cumDeaths, Confirmed, Deaths)][]
+    Deaths=cumDeaths-shift(cumDeaths)), by=.(USPS)][
+      ,`:=`(Date=rep(as.IDate(colnames(cdp$c)[-1], "%m/%d/%y"),ps),
+            variable=NULL)][,.(USPS, Date,cumConfirmed, cumDeaths, Confirmed, Deaths)][]
 
 }
 
