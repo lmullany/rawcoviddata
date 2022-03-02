@@ -4,15 +4,26 @@
 \alias{get_county_from_cdp}
 \title{Function to just get a US county from c,d,p}
 \usage{
-get_county_from_cdp(fips, cdp)
+get_county_from_cdp(
+  fips,
+  cdp,
+  fix_cumul = FALSE,
+  type = c("mid", "low", "high")
+)
 }
 \arguments{
+\item{fips}{five-digit fips}
+
 \item{cdp}{compact version of cases, deaths, population as return from
 cssedata(return_compact=T)}
+
+\item{fix_cumul}{(logical, default=F); set to TRUE to fix cumulative data}
+
+\item{type}{(string, default="mid"); strategy to fix cumulative data}
 }
 \description{
 Function use compact csse data (c,d,p) to return
-a datatable for entire US
+a datatable for a single county
 }
 \examples{
 get_county_from_cdp(21027,cdp)

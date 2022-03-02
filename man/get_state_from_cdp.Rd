@@ -4,7 +4,12 @@
 \alias{get_state_from_cdp}
 \title{Function to just get a single state given cdp}
 \usage{
-get_state_from_cdp(cdp, state = NULL)
+get_state_from_cdp(
+  cdp,
+  state = NULL,
+  fix_cumul = FALSE,
+  type = c("mid", "low", "high")
+)
 }
 \arguments{
 \item{cdp}{compact version of cases, deaths, population as return from
@@ -12,6 +17,10 @@ cssedata(return_compact=T)}
 
 \item{state}{string (default is NULL, will return all states), otherwise specifiy a
 specifc state abbreviation (i.e. "TX")}
+
+\item{fix_cumul}{(logical, default=F); set to TRUE to fix cumulative data}
+
+\item{type}{(string, default="mid"); strategy to fix cumulative data}
 }
 \description{
 Function use compact csse data (c,d,p) to return
