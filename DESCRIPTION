@@ -1,6 +1,6 @@
 Package: rawcoviddata
 Title: Provides function for pulling publicly available covid data
-Version: 1.1.0.0000
+Version: 1.2.0.0000
 Authors@R: 
     person(given = "Luke",
            family = "Mullany",
