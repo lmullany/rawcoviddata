@@ -460,7 +460,7 @@ get_all_states_from_cdp <- function(cdp, fix_cumul=FALSE, type=c("mid","low","hi
   k[,`:=`(
     Confirmed=cumConfirmed-shift(cumConfirmed),
     Deaths=cumDeaths-shift(cumDeaths)), by=.(USPS)][
-      ,`:=`(Date=rep(as.IDate(colnames(cdp$c)[-1], "%m/%d/%y"),ps),
+      ,`:=`(Date=rep(as.IDate(colnames(cdp$c)[-1], "%m/%d/%y"),each=ps),
             variable=NULL)][,.(USPS, Date,cumConfirmed, cumDeaths, Confirmed, Deaths)][]
 
 }
