@@ -316,7 +316,7 @@ get_urls <- function(gitpath=NULL, updategit=F, scope=c("US","global")) {
 #' @param cdp compact version of cases, deaths, population as return from
 #' cssedata(return_compact=T)
 #' @param state string (default is NULL, will return all states), otherwise specifiy a
-#' specifc state abbreviation (i.e. "TX")
+#' specifc state abbreviation (i.e. "TX") or state name (i.e. "Texas")
 #' @param fix_cumul (logical, default=F); set to TRUE to fix cumulative data
 #' @param type (string, default="mid"); strategy to fix cumulative data
 #' @export
@@ -327,11 +327,24 @@ get_state_from_cdp <- function(cdp, state=NULL, fix_cumul=FALSE,type=c("mid", "l
   if(is.null(state)) {
     return(get_all_states_from_cdp(cdp, fix_cumul=fix_cumul, type=type))
   } else {
-    fips = cdp$p[Province_State == statenames()[state_abbreviation==state,state_name],FIPS]
+    fips = cdp$p[Province_State == flexstate(state),FIPS]
     return(quick_melt(cdp$c[FIPS %chin% fips], cdp$d[FIPS %chin% fips], fix_cumul = fix_cumul, type=type)[])
   }
-
 }
+
+#' Helper function to get state name wheter abbreviation or name is passed
+#'
+#' Function returns statename given a statename in either abbrev or statename format
+#' @param state state provided as either name or abbreviation
+#' @keywords internal
+#' @examples
+#' flexstate("TX")
+#' flexstate("Texas")
+
+flexstate <- function(state) {
+  statenames()[state_abbreviation==state | state_name==state, state_name]
+}
+
 
 #' Function to just get a US from c,d,p
 #'

@@ -16,7 +16,7 @@ get_state_from_cdp(
 cssedata(return_compact=T)}
 
 \item{state}{string (default is NULL, will return all states), otherwise specifiy a
-specifc state abbreviation (i.e. "TX")}
+specifc state abbreviation (i.e. "TX") or state name (i.e. "Texas")}
 
 \item{fix_cumul}{(logical, default=F); set to TRUE to fix cumulative data}
 
