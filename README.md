@@ -12,15 +12,23 @@ devtools::install_github("lmullany/rawcoviddata")
 #load the package
 library(rawcoviddata)
 
-#pull the csse data by country and date
+#pull the global csse data by country and date
 global <- cssedataglobal() # pulls the csse data by country and date
 
-#pull the usafacts data
-usafactsdata()
+#pull the usa csse data, setting `return_compact` to TRUE
+usa_csse_data = cssedata(return_compact=T)
 
-#get us/state/county level data, as a list, indicating either usafacts or csse as the source data
-us_empirical_by_level("csse")
-us_empirical_by_level("usafacts")
+# This returns a three element list: case data, death data, and population data
+# Use helper functions `get_us_from_cdp()`, get_all_states_from_cdp()` or `get_all_counties_from_cdp()`
+# to get us, state, and county level information from the compact form of `cssedata()`
+
+# us data
+get_us_from_cdp(usa_csse_data,fix_cumul = T)
+# state data
+get_all_states_from_cdp(usa_csse_data,fix_cumul = T)
+# county data
+get_all_counties_from_cdp(usa_csse_data,fix_cumul = T)
+
 ```
 
 # notes:
