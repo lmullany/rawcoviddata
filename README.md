@@ -4,7 +4,9 @@ simple R package to read data from publicly available covid data repositories
 
 # installation, using devtools()
 
+```r
 devtools::install_github("lmullany/rawcoviddata")
+```
 
 # example usage in R
 
